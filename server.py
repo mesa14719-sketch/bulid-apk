@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-كاشف دوال الشراء Pro - السيرفر
-pip install flask androguard
-python server.py
+كاشف دوال الشراء Pro - السيرفر (Render Ready)
+pip install flask androguard gunicorn
 """
 
 import os
@@ -26,7 +25,8 @@ except ImportError:
     sys.exit(0)
 
 app = Flask(__name__)
-app.config['MAX_CONTENT_LENGTH'] = 3 * 1024 * 1024 * 1024  # 3GB
+# Render المجاني: 512MB RAM. الحد الأقصى الآمن للملف 100MB.
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = '/tmp/billing_uploads'
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -295,15 +295,16 @@ def api_progress(job_id):
                     headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
+# ================== تشغيل السيرفر ==================
 if __name__ == "__main__":
-    print("=" * 55)
-    print("🔍 كاشف دوال الشراء Pro - دقة 90%")
-    print("=" * 55)
-    print("⏳ جاري تشغيل السيرفر...")
-    print("=" * 55)
-    
-    # Render يعطيك المنفذ عبر متغير بيئة اسمه PORT
+    # Render يعطيك المنفذ عبر متغير PORT
     port = int(os.environ.get("PORT", 5000))
     
-    # host="0.0.0.0" عشان Render يقدر يوصله من الخارج
+    print("=" * 55)
+    print("🔍 كاشف دوال الشراء Pro - Render Ready")
+    print("=" * 55)
+    print(f"🌐 يعمل على المنفذ: {port}")
+    print("=" * 55)
+    
+    # host="0.0.0.0" ضروري لـ Render
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True, use_reloader=False)
