@@ -300,11 +300,10 @@ if __name__ == "__main__":
     print("🔍 كاشف دوال الشراء Pro - دقة 90%")
     print("=" * 55)
     print("⏳ جاري تشغيل السيرفر...")
-    print("🌐 افتح المتصفح يدوياً على: http://127.0.0.1:5000")
-    print("🛑 لإيقاف السيرفر: Ctrl + C")
     print("=" * 55)
-    print("")
-    try:
-        app.run(host="127.0.0.1", port=5000, debug=False, threaded=True, use_reloader=False)
-    except KeyboardInterrupt:
-        print("\n👋 تم إيقاف السيرفر")
+    
+    # Render يعطيك المنفذ عبر متغير بيئة اسمه PORT
+    port = int(os.environ.get("PORT", 5000))
+    
+    # host="0.0.0.0" عشان Render يقدر يوصله من الخارج
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True, use_reloader=False)
