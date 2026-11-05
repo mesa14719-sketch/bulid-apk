@@ -6,6 +6,8 @@ import math
 import shutil
 import asyncio
 import gc
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from pyrogram import Client, filters
 from pyrogram.types import (
     Message,
@@ -34,7 +36,7 @@ os.makedirs(BASE_WORK_DIR, exist_ok=True)
 os.makedirs(CUSTOM_FILES_DIR, exist_ok=True)
 
 # ============================================================
-# ☕ كشف Java تلقائياً (لمنع خطأ "No such file or directory: 'java'")
+# ☕ كشف Java تلقائياً
 # ============================================================
 def find_java():
     java_path = shutil.which("java")
@@ -62,6 +64,35 @@ def find_java():
     return None
 
 JAVA_BIN = find_java() or "java"
+
+# ============================================================
+# 🌐 Health Server — لـ Render Port Scan
+# ============================================================
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"OK - APKPatcher Bot Running")
+    
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
+    
+    def log_message(self, *args):
+        pass
+
+def start_health_server():
+    port = int(os.environ.get("PORT", 10000))
+    try:
+        server = HTTPServer(("0.0.0.0", port), HealthHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        print(f"✅ Health Server على المنفذ :{port}")
+        return server
+    except Exception as e:
+        print(f"⚠️ Health Server failed: {e}")
+        return None
 
 # ============================================================
 # 🚀 Client
@@ -366,6 +397,20 @@ async def process_document(client: Client, message: Message):
         last_edit_times.pop(status_msg.id, None)
         gc.collect()
 
+# ============================================================
+# 🚀 Main
+# ============================================================
 if __name__ == "__main__":
-    print(f"🚀 البوت يعمل — Java: {JAVA_BIN}")
+    print("=" * 50)
+    print("🚀 APKPatcher Bot")
+    print("=" * 50)
+    print(f"☕ Java: {JAVA_BIN}")
+    print(f"📦 JAR: {'✅' if os.path.exists(JAR_PATH) else '❌'}")
+    print("=" * 50)
+    
+    # تشغيل Health Server (لـ Render)
+    start_health_server()
+    
+    # تشغيل البوت
+    print("🚀 البوت يعمل...")
     app.run()
