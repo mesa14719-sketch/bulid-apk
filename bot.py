@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import time
 import math
@@ -13,10 +14,16 @@ from pyrogram.types import (
     CallbackQuery
 )
 
+# ============================================================
+# 🔐 Config مباشر
+# ============================================================
 API_ID = 33651304
 API_HASH = "39dd5566cfe202b84f7e6591d3789668"
 BOT_TOKEN = "8882497343:AAG-ho19gEPPUZiSfuPy26uZpN4cUp4vs_I"
 
+# ============================================================
+# 📁 Paths
+# ============================================================
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 JAR_PATH = os.path.join(CURRENT_DIR, "APKPatcher.jar")
 
@@ -26,8 +33,44 @@ CUSTOM_FILES_DIR = os.path.join(CURRENT_DIR, "custom_files")
 os.makedirs(BASE_WORK_DIR, exist_ok=True)
 os.makedirs(CUSTOM_FILES_DIR, exist_ok=True)
 
+# ============================================================
+# ☕ كشف Java تلقائياً (لمنع خطأ "No such file or directory: 'java'")
+# ============================================================
+def find_java():
+    java_path = shutil.which("java")
+    if java_path:
+        return java_path
+    common = [
+        "/usr/bin/java",
+        "/usr/local/bin/java",
+        "/usr/lib/jvm/default-java/bin/java",
+        "/opt/java/openjdk/bin/java",
+        "/opt/java/bin/java",
+    ]
+    for p in common:
+        if os.path.exists(p) and os.access(p, os.X_OK):
+            return p
+    if os.environ.get("JAVA_HOME"):
+        j = os.path.join(os.environ["JAVA_HOME"], "bin", "java")
+        if os.path.exists(j):
+            return j
+    if os.path.isdir("/usr/lib/jvm"):
+        for d in os.listdir("/usr/lib/jvm"):
+            j = os.path.join("/usr/lib/jvm", d, "bin", "java")
+            if os.path.exists(j):
+                return j
+    return None
+
+JAVA_BIN = find_java() or "java"
+
+# ============================================================
+# 🚀 Client
+# ============================================================
 app = Client("apkpatcher_bot", api_id=API_ID, api_hash=API_HASH, bot_token=BOT_TOKEN)
 
+# ============================================================
+# 📋 Flags
+# ============================================================
 ALL_FLAGS = {
     "-ssl": "تجاوز فحص شهادات SSL",
     "-fix": "إصلاح مشاكل التثبيت",
@@ -50,6 +93,9 @@ user_paths = {}
 user_waiting_input = {}
 last_edit_times = {}
 
+# ============================================================
+# 🔧 Helpers
+# ============================================================
 def humanbytes(size):
     if not size:
         return "0 B"
@@ -126,6 +172,9 @@ def build_flags_keyboard(user_id):
     
     return InlineKeyboardMarkup(buttons)
 
+# ============================================================
+# 🎯 Handlers
+# ============================================================
 @app.on_message(filters.command("start") & filters.private)
 async def start_cmd(client: Client, message: Message):
     user_id = message.from_user.id
@@ -256,7 +305,7 @@ async def process_document(client: Client, message: Message):
     is_split = filename.endswith(('.apks', '.apkm', '.xapk'))
     mode_flag = "-m" if is_split else "-i"
     
-    cmd = ["java", "-jar", JAR_PATH, mode_flag, input_path] + cmd_flags
+    cmd = [JAVA_BIN, "-jar", JAR_PATH, mode_flag, input_path] + cmd_flags
     
     try:
         process = await asyncio.create_subprocess_exec(
@@ -318,5 +367,5 @@ async def process_document(client: Client, message: Message):
         gc.collect()
 
 if __name__ == "__main__":
-    print("🚀 البوت يعمل الآن بكفاءة...")
+    print(f"🚀 البوت يعمل — Java: {JAVA_BIN}")
     app.run()
